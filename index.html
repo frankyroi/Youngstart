@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <title>YOUNGSTARS</title>
+
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+     <!-- MAIN CSS -->
+     <link rel="stylesheet" href="css/style.css">
+
+     <script src="js/vue.js"></script>
+     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+     
+
+</head>
+<body>
+    <div id='myapp'>
+
+
+
+     <!-- HOME -->
+
+          <div class="container" id="intro">
+               <div class="row">
+
+                    <div class="col-md-6 col-sm-12">
+                         <div class="about-info">
+                              <div >
+                                <h2>Please read the following instrustions carefully before you start.</h2>
+                              </div>
+
+                              <div>
+                                   <li>You are expected to read a short story and answer 10 questions based on the story.</li>
+                                   <li>You will be given 30 minutes to read and answer the 10 questions.</li>
+                                   <li>Each question will be graded on a 5 point score.</li>
+                                   <li>Your timer begins once you click start.</li>
+                                   <p>GOOD LUCK</p>
+                                   
+                              </div>
+                         </div>
+                    </div>
+                    
+               </div>
+               <section>
+                    <button class="button" onclick="toggle('intro','story')">START</button>
+                </section>
+          </div>
+
+
+          <div class="container" id="story" style="display: none;">
+            <div>Time left <span id="time">01:00</span> seconds!</div>
+            <div class="row">
+
+                <div class="col-md-6 col-sm-12">
+                    <div class="about-info">
+                        <div >
+                            <p>{{story}}</p>
+                        </div>
+
+                        <div v-for="(q,index) in quizNOpts" >
+                        <p>{{q['question']}}</p>
+                        <div v-for="(option,index) in q['quizOpts']">
+                            <input type="radio" :id="option['optId']" :name="option['quesID']" :value="option['optId']"  v-model="answers[option['quesID']-1]">
+                            <label :for="option['optId']">{{option['ques']}}</label><br>
+                        </div>
+                        </div>
+                        
+                        
+                    </div>
+                </div>
+                 
+            </div>
+            <section>
+                <button class="button" onclick="toggle('story','result')">Submit</button>
+                <button class="button" onclick="newStory()">Create story</button>
+                <button class="button" onclick="edit()">Update</button>
+             </section>
+       </div>
+
+
+       <div class="container" id="result" style="display: none;">
+        <div class="row">
+
+            <div class="col-md-6 col-sm-12">
+                <div class="result-info">
+                    <div >
+                        <p>Great, you are done!</p>
+                        <p>You need an average score of 75% to pass.</p>
+                        <p>YOUR TEST SCORE: {{score}}%</p>
+                        <p v-if= 'score >= 75'>
+                            PASSED. Congratuations you have passed.
+                        </p>
+                        <p v-else>
+                            FAILED. Unfortunately you did not make the cutoff mark.
+                        </p>
+                    </div>
+                    
+                </div>
+            </div>
+             
+        </div>
+       
+   </div>
+
+   <section>
+    <table>
+        <tr>
+          <th>ID</th>
+          <th>Question</th>
+          <th>Right Option ID</th>
+        </tr>
+        <tr  v-for="(q,index) in questions">
+          <td>{{q['id']}}</td>
+          <td>{{q['question']}}</td>
+          <td>{{q['right_option']}}</td>
+          <td>Edit</td>
+          <td>Update</td>
+        </tr>
+
+      </table>
+
+    </br>
+
+    <form>
+      <label>ID</label>
+      <input type="text" name="id" v-model="newQuestionID">
+        </br>
+      <label>Question</label>
+      <input type="text" name="question" v-model="newQuestion">
+      </br>
+      <label>Right Option Id</label>
+      <input type="text" name="rightOption" v-model="newRightOption">
+      </br>
+     
+      <input type="button" @click="addQuestion()" value="Add">
+    </form>
+
+</div>
+      
+   </section>
+
+    </div>
+
+     <!-- Script -->
+        <script>
+            function toggle(from,to) {
+                if (from == 'intro') {
+                    app.quizOpts();
+                    startTimer();
+                }else{
+                    app.result()
+                }
+                
+                var x = document.getElementById(from);
+                var y = document.getElementById(to);
+                x.style.display = "none";
+                y.style.display = "block";
+
+            }
+
+        
+
+            function startTimer() {
+                var duration = 60 ,
+                display = document.querySelector('#time');
+                var timer = duration, minutes, seconds;
+                setInterval(function () {
+                    minutes = parseInt(timer / 60, 10)
+                    seconds = parseInt(timer % 60, 10);
+
+                    minutes = minutes < 10 ? "0" + minutes : minutes;
+                    seconds = seconds < 10 ? "0" + seconds : seconds;
+
+                    display.textContent = minutes + ":" + seconds;
+
+                    if (--timer == 0) {
+                        toggle('story','result');
+                    }
+                }, 1000);
+            }
+
+            
+        </script>
+		<script>
+			var app = new Vue({
+                el: '#myapp',
+
+				data: {
+                    story: "",
+                    questions: "",
+                    options:"",
+                    quizNOpts: "",
+                    answers: [],
+                    correctAnswers: [],
+                    score:"",
+                    newStory: "",
+                    newQuestionID:"",
+                    newQuestion: "",
+                    newRightOption:""
+                },
+                
+				methods: {
+					passage: function(){
+						axios.post('php/ajaxfile.php', {
+						    request: 1
+						})
+						.then(function (response) {
+                            // console.log(response.data);
+							app.story = response.data['Story'];
+						})
+						.catch(function (error) {
+						    console.log(error);
+						});
+						
+                    },
+                    quiz: function(){
+						axios.post('php/ajaxfile.php', {
+						    request: 2
+						})
+						.then(function (response) {
+                            app.questions = response.data;
+                            for (let y = 0; y <  app.questions.length; y++) {
+                                app.questions[y]['quizOpts'] = [];
+                                app.correctAnswers.push(app.questions[y]['right_option']);
+                            }
+                            
+						})
+						.catch(function (error) {
+						    console.log(error);
+						});
+						
+                    },
+                    opt: function(){
+						axios.post('php/ajaxfile.php', {
+						    request: 3
+						})
+						.then(function (response) {
+                            // console.log(response.data);
+                            app.options = response.data;
+						})
+						.catch(function (error) {
+						    console.log(error);
+						});
+						
+                    },
+                    addStory: function(){
+
+                    if(this.newStory != ''){
+                        axios.post('php/ajaxfile.php', {
+                            request: 4,
+                            story: this.newStory,
+                           
+                        })
+                        .then(function (response) {
+
+                            // Empty values
+                            app.newStory = '';
+                            
+                            alert(response.data);
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                    }else{
+                        alert('Fill in story');
+                    }
+                                
+                    },
+
+                    addQuestion: function(){
+
+                    if(this.newQuestion != '' && this.newRightOption != ''){
+                        axios.post('php/ajaxfile.php', {
+                            request: 5,
+                            newQuestionID: this.newQuestionID,
+                            newQuestion: this.newQuestion,
+                            newRightOption: this.newRightOption,
+                        
+                        })
+                        .then(function (response) {
+
+                            // Empty values
+                            app.newQuestionID = '';
+                            app.newQuestion = '';
+                            app.newRightOption = '';
+                            
+                            alert(response.data);
+                        })
+                        .catch(function (error) {
+                            console.log(error);
+                        });
+                    }else{
+                        alert('Fill in story');
+                    }
+                                
+                    },
+
+          
+
+                    quizOpts:function(){
+                        var newQuestions = app.questions;
+                     
+                        for (let index = 0; index <  app.options.length; index++) {
+                            for (let i = 0; i < newQuestions.length; i++) {
+                                if (app.options[index]['question_id'] == newQuestions[i]['id']) {
+                                    newQuestions[i]['quizOpts'].push({'optId': app.options[index]['id'],'quesID':app.options[index]['question_id'],'ques':app.options[index]['option']})
+                                }
+                                
+                            }  
+                        }
+                        console.log(newQuestions);
+                        app.quizNOpts = newQuestions;
+                        
+                    },
+                    result:function(){
+                        var a = app.correctAnswers; 
+                        var b = app.answers; 
+                        var count = 0; 
+                        if(a.length!=b.length) 
+                        b.length = a.length; 
+                        
+                        console.log( "True"); 
+                        // comapring each element of array 
+                        for(var i=0;i<a.length;i++) {
+                            if(a[i]==b[i]) 
+                            count+=5
+                        }
+                        
+                        
+                        console.log( count/50*100); 
+                        app.score = count/50*100;
+                    }
+
+	
+				},
+				created: function(){
+                    this.passage();
+                    this.quiz();
+                    this.opt();
+				}
+			})
+
+          </script>
+
+
+     
+
+</body>
+</html>
